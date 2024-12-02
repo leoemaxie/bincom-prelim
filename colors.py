@@ -21,8 +21,8 @@ def parse_html(file_path: str) -> defaultdict:
     """
     color_set = defaultdict(int)
     
-    with open(file_path, 'r') as f:
-        soup = BeautifulSoup(f, features='html.parser')
+    with open(file_path, 'r') as file:
+        soup = BeautifulSoup(file, features='html.parser')
         for row in soup.find_all('tr'):
             colors = row.select('td')[1].get_text().strip().replace('\n', '')
             for color in colors.split(', '):
@@ -57,9 +57,15 @@ def save_to_db(color_set: defaultdict):
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
     
-    cursor.execute("CREATE TABLE IF NOT EXISTS colors (color VARCHAR PRIMARY KEY, frequency INT)")
+    cursor.execute(
+        "CREATE TABLE IF NOT EXISTS colors (color VARCHAR PRIMARY KEY, frequency INT)"
+    )
     for color, frequency in color_set.items():
-        cursor.execute("INSERT INTO colors (color, frequency) VALUES (%s, %s) ON CONFLICT (color) DO UPDATE SET frequency = EXCLUDED.frequency", (color, frequency))
+        cursor.execute(
+            "INSERT INTO colors (color, frequency) VALUES (%s, %s) "
+            "ON CONFLICT (color) DO UPDATE SET frequency = EXCLUDED.frequency",
+            (color, frequency)
+        )
     
     conn.commit()
     cursor.close()
